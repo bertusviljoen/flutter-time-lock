@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import '../configuration.dart';
 import '../services/background_service.dart';
 import '../utils/logger.dart';
@@ -10,7 +9,6 @@ class ConfigurationScreen extends StatefulWidget {
 }
 
 class _ConfigurationScreenState extends State<ConfigurationScreen> {
-  static const platform = MethodChannel('com.example.flutter_time_lock/system');
   Map<String, dynamic> config = Configuration.config;
 
   final _formKey = GlobalKey<FormState>();
@@ -24,16 +22,19 @@ class _ConfigurationScreenState extends State<ConfigurationScreen> {
     try {
       if (_formKey.currentState!.validate()) {
         _formKey.currentState!.save();
-        LoggerUtil.debug('ConfigurationScreen', 'Saving configuration: $config');
+        LoggerUtil.debug(
+            'ConfigurationScreen', 'Saving configuration: $config');
         await Configuration.saveConfig(config);
-        LoggerUtil.debug('ConfigurationScreen', 'Starting background service with new config');
+        LoggerUtil.debug('ConfigurationScreen',
+            'Starting background service with new config');
         await BackgroundService.startService(config);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Configuration saved')),
         );
       }
     } catch (e, stackTrace) {
-      LoggerUtil.error('ConfigurationScreen', 'Error saving configuration', e, stackTrace);
+      LoggerUtil.error(
+          'ConfigurationScreen', 'Error saving configuration', e, stackTrace);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error saving configuration')),
       );

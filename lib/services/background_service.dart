@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:ui';
 import 'package:flutter/services.dart';
 import '../utils/logger.dart';
 import '../configuration.dart';
@@ -14,7 +13,6 @@ class BackgroundService {
       _instance = BackgroundService();
 
       LoggerUtil.debug(TAG, 'Background service initialized');
-
     } catch (e, stackTrace) {
       LoggerUtil.error(
           TAG, 'Error initializing background service', e, stackTrace);
@@ -117,7 +115,7 @@ class BackgroundService {
   static Future<void> startService(Map<String, dynamic> config) async {
     try {
       if (_instance != null) {
-        _instance!.invoke('updateConfig', config);
+        //_instance!.invoke('updateConfig', config);
         LoggerUtil.debug(
             TAG, 'Background service started with config: $config');
       }
@@ -129,7 +127,7 @@ class BackgroundService {
   static Future<void> resetService(Map<String, dynamic> config) async {
     try {
       if (_instance != null) {
-        _instance!.invoke('updateConfig', config);
+        //_instance!.invoke('updateConfig', config);
         LoggerUtil.debug(TAG, 'Background service reset with config: $config');
       }
     } catch (e, stackTrace) {
@@ -186,7 +184,7 @@ class BackgroundService {
   }
 
   static void dispose() {
-    _instance?.invoke('stopService');
+    //_instance?.invoke('stopService');
     LoggerUtil.debug(TAG, 'Background service disposed');
   }
 }
