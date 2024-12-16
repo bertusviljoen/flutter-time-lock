@@ -71,21 +71,30 @@ class BackgroundService {
       _timer?.cancel();
 
       // Create a periodic timer that will show the alert
-      _timer = Timer.periodic(Duration(hours: 1), (timer) async {
+      _timer = Timer.periodic(Duration(minutes: 1), (timer) async {
         // Ensure we have overlay permission before showing alert
         bool hasPermission = await _ensureOverlayPermission();
         if (hasPermission) {
-          // Try multiple times to show the alert to ensure delivery
-          for (int i = 0; i < 3; i++) {
-            try {
-              await _showSystemAlert('Unlock Alert', 'Time to unlock the device for $unlockDuration minutes!');
-              await Future.delayed(Duration(seconds: unlockDurationSeconds));
-              await _showSystemAlert('Lock Alert', 'Time to lock the device for $lockTimeout minutes!');
-              break; // Break if successful
-            } catch (e) {
-              print('$TAG: Attempt $i to show alert failed: $e');
-              await Future.delayed(Duration(seconds: 1)); // Wait before retry
-            }
+          DateTime now = DateTime.now();
+          int currentMinute = now.minute;
+          int currentSecond = now.second;
+
+          // Calculate the start and end times for unlock duration and lock timeout
+          int unlockStartMinute = 0;
+          int unlockEndMinute = unlockDuration;
+          int lockStartMinute = unlockEndMinute;
+          int lockEndMinute = lockStartMinute + lockTimeout;
+
+          if (currentMinute >= unlockStartMinute && currentMinute < unlockEndMinute) {
+            // Within unlock duration
+            await _showSystemAlert('Unlock Alert', 'Time to unlock the device for $unlockDuration minutes!');
+          } else if (currentMinute >= lockStartMinute && currentMinute < lockEndMinute) {
+            // Within lock timeout
+            await _showSystemAlert('Lock Alert', 'Time to lock the device for $lockTimeout minutes!');
+          } else {
+            // Outside of unlock duration and lock timeout
+            // Close the dialog if it is open
+            await _closeSystemAlert();
           }
         } else {
           print('$TAG: Cannot show alert - overlay permission not granted');
@@ -138,6 +147,14 @@ class BackgroundService {
     } catch (e) {
       print('$TAG: Unexpected error showing system alert: $e');
       rethrow; // Rethrow to allow retry in startService
+    }
+  }
+
+  static Future<void> _closeSystemAlert() async {
+    try {
+      await platform.invokeMethod('closeSystemAlert');
+    } catch (e) {
+      print('$TAG: Error closing system alert: $e');
     }
   }
 
