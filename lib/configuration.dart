@@ -6,11 +6,7 @@ import 'package:flutter/material.dart';
 class Configuration {
   static const String _configFileName = 'config.json';
   static Map<String, dynamic> _config = {
-    'childPin': '',
     'adultPin': '',
-    'lockTime': '',
-    'lockInterval': '',
-    'timerUnit': 'seconds',
     'unlockDuration': 20,
     'lockTimeout': 10
   };
@@ -33,11 +29,7 @@ class Configuration {
         _config = jsonDecode(contents);
       } else {
         final defaultConfig = {
-          'childPin': '1234',
           'adultPin': '5678',
-          'lockTime': '1',
-          'lockInterval': '2',
-          'timerUnit': 'seconds',
           'unlockDuration': 20,
           'lockTimeout': 10
         };
@@ -47,11 +39,7 @@ class Configuration {
     } catch (e) {
       print('Error reading configuration file: $e');
       final defaultConfig = {
-        'childPin': '1234',
         'adultPin': '5678',
-        'lockTime': '1',
-        'lockInterval': '2',
-        'timerUnit': 'seconds',
         'unlockDuration': 20,
         'lockTimeout': 10
       };

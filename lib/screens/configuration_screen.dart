@@ -43,19 +43,6 @@ class _ConfigurationScreenState extends State<ConfigurationScreen> {
           child: Column(
             children: <Widget>[
               TextFormField(
-                initialValue: config['childPin'],
-                decoration: InputDecoration(labelText: 'Child Pin'),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter a child pin';
-                  }
-                  return null;
-                },
-                onSaved: (value) {
-                  config['childPin'] = value!;
-                },
-              ),
-              TextFormField(
                 initialValue: config['adultPin'],
                 decoration: InputDecoration(labelText: 'Adult Pin'),
                 validator: (value) {
@@ -66,40 +53,6 @@ class _ConfigurationScreenState extends State<ConfigurationScreen> {
                 },
                 onSaved: (value) {
                   config['adultPin'] = value!;
-                },
-              ),
-              TextFormField(
-                initialValue: config['lockTime'],
-                decoration: InputDecoration(labelText: 'Lock Time'),
-                keyboardType: TextInputType.number,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter a lock time';
-                  }
-                  if (int.tryParse(value) == null) {
-                    return 'Please enter a valid number';
-                  }
-                  return null;
-                },
-                onSaved: (value) {
-                  config['lockTime'] = value!;
-                },
-              ),
-              TextFormField(
-                initialValue: config['lockInterval'],
-                decoration: InputDecoration(labelText: 'Lock Interval'),
-                keyboardType: TextInputType.number,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter a lock interval';
-                  }
-                  if (int.tryParse(value) == null) {
-                    return 'Please enter a valid number';
-                  }
-                  return null;
-                },
-                onSaved: (value) {
-                  config['lockInterval'] = value!;
                 },
               ),
               TextFormField(
@@ -136,24 +89,6 @@ class _ConfigurationScreenState extends State<ConfigurationScreen> {
                 },
                 onSaved: (value) {
                   config['lockTimeout'] = int.parse(value!);
-                },
-              ),
-              DropdownButtonFormField<String>(
-                value: config['timerUnit'],
-                decoration: InputDecoration(labelText: 'Timer Unit'),
-                items: ['seconds', 'minutes']
-                    .map((unit) => DropdownMenuItem(
-                          value: unit,
-                          child: Text(unit),
-                        ))
-                    .toList(),
-                onChanged: (value) {
-                  setState(() {
-                    config['timerUnit'] = value!;
-                  });
-                },
-                onSaved: (value) {
-                  config['timerUnit'] = value!;
                 },
               ),
               SizedBox(height: 20),
