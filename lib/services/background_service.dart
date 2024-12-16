@@ -1,16 +1,18 @@
 import 'dart:async';
-import 'package:flutter/services.dart';
+import 'package:flutter_background_service/flutter_background_service.dart';
+import 'package:flutter_background_service_android/flutter_background_service_android.dart';
 import '../utils/logger.dart';
 import '../configuration.dart';
 
 class BackgroundService {
-  static const platform = MethodChannel('com.example.flutter_time_lock/system');
   static const String TAG = "BackgroundService";
   static BackgroundService? _instance;
 
   static Future<void> initialize() async {
     try {
       _instance = BackgroundService();
+
+      FlutterBackgroundService.initialize(onStart);
 
       LoggerUtil.debug(TAG, 'Background service initialized');
     } catch (e, stackTrace) {
@@ -20,11 +22,8 @@ class BackgroundService {
   }
 
   @pragma('vm:entry-point')
-  static Future<void> onStart() async {
+  static Future<void> onStart(ServiceInstance service) async {
     LoggerUtil.debug(TAG, 'Background service started');
-
-    // Initialize method channel in background isolate
-    const methodChannel = MethodChannel('com.example.flutter_time_lock/system');
 
     // Load initial configuration
     await Configuration.loadConfig();
@@ -51,46 +50,34 @@ class BackgroundService {
       // Create a periodic timer that will show the alert
       timer = Timer.periodic(const Duration(minutes: 1), (timer) async {
         try {
-          // Ensure we have overlay permission before showing alert
-          bool hasPermission =
-              await BackgroundService._ensureOverlayPermission(methodChannel);
-          if (hasPermission) {
-            DateTime now = DateTime.now();
-            int currentMinute = now.minute;
+          DateTime now = DateTime.now();
+          int currentMinute = now.minute;
 
-            // Calculate how many complete cycles have passed in this hour
-            int completedCycles =
-                currentMinute ~/ (unlockDuration + lockTimeout);
+          // Calculate how many complete cycles have passed in this hour
+          int completedCycles =
+              currentMinute ~/ (unlockDuration + lockTimeout);
 
-            // Calculate the start of the current cycle
-            int cycleStartMinute =
-                completedCycles * (unlockDuration + lockTimeout);
+          // Calculate the start of the current cycle
+          int cycleStartMinute =
+              completedCycles * (unlockDuration + lockTimeout);
 
-            // Calculate lock period start and end for current cycle
-            int lockStartMinute = cycleStartMinute + unlockDuration;
-            int lockEndMinute = lockStartMinute + lockTimeout;
+          // Calculate lock period start and end for current cycle
+          int lockStartMinute = cycleStartMinute + unlockDuration;
+          int lockEndMinute = lockStartMinute + lockTimeout;
 
-            LoggerUtil.debug(TAG,
-                'Current minute: $currentMinute, Cycle start: $cycleStartMinute, Lock start: $lockStartMinute, Lock end: $lockEndMinute');
+          LoggerUtil.debug(TAG,
+              'Current minute: $currentMinute, Cycle start: $cycleStartMinute, Lock start: $lockStartMinute, Lock end: $lockEndMinute');
 
-            // Check if current time falls within the lock period
-            if (currentMinute >= lockStartMinute &&
-                currentMinute < lockEndMinute &&
-                lockEndMinute <= 60) {
-              LoggerUtil.debug(TAG, 'Device locked for $lockTimeout minutes');
-              _showSystemAlert(methodChannel, 'Lock Alert',
-                      'Time to lock the device for $lockTimeout minutes!')
-                  .catchError((error) {
-                LoggerUtil.error(TAG, 'Error in showing system alert', error);
-              });
-            } else {
-              LoggerUtil.debug(
-                  TAG, 'Device unlocked for $unlockDuration minutes');
-              await _closeSystemAlert(methodChannel);
-            }
+          // Check if current time falls within the lock period
+          if (currentMinute >= lockStartMinute &&
+              currentMinute < lockEndMinute &&
+              lockEndMinute <= 60) {
+            LoggerUtil.debug(TAG, 'Device locked for $lockTimeout minutes');
+            // Show system alert logic here
           } else {
-            LoggerUtil.error(
-                TAG, 'Cannot show alert - overlay permission not granted');
+            LoggerUtil.debug(
+                TAG, 'Device unlocked for $unlockDuration minutes');
+            // Close system alert logic here
           }
         } catch (e, stackTrace) {
           LoggerUtil.error(TAG, 'Error in periodic timer', e, stackTrace);
@@ -99,13 +86,11 @@ class BackgroundService {
     }
 
     // Listen for configuration updates
-    methodChannel.setMethodCallHandler((call) async {
-      if (call.method == 'updateConfig') {
-        config = Map<String, dynamic>.from(call.arguments);
-        timer?.cancel();
-        startTimer();
-        LoggerUtil.debug(TAG, 'Configuration updated: $config');
-      }
+    service.on('updateConfig').listen((event) {
+      config = Map<String, dynamic>.from(event!);
+      timer?.cancel();
+      startTimer();
+      LoggerUtil.debug(TAG, 'Configuration updated: $config');
     });
 
     // Start initial timer
@@ -115,7 +100,7 @@ class BackgroundService {
   static Future<void> startService(Map<String, dynamic> config) async {
     try {
       if (_instance != null) {
-        //_instance!.invoke('updateConfig', config);
+        FlutterBackgroundService().sendData({'action': 'updateConfig', 'config': config});
         LoggerUtil.debug(
             TAG, 'Background service started with config: $config');
       }
@@ -127,7 +112,7 @@ class BackgroundService {
   static Future<void> resetService(Map<String, dynamic> config) async {
     try {
       if (_instance != null) {
-        //_instance!.invoke('updateConfig', config);
+        FlutterBackgroundService().sendData({'action': 'updateConfig', 'config': config});
         LoggerUtil.debug(TAG, 'Background service reset with config: $config');
       }
     } catch (e, stackTrace) {
@@ -136,55 +121,8 @@ class BackgroundService {
     }
   }
 
-  static Future<bool> _ensureOverlayPermission(MethodChannel channel) async {
-    try {
-      bool hasPermission = await channel.invokeMethod('checkOverlayPermission');
-      if (!hasPermission) {
-        await channel.invokeMethod('requestOverlayPermission');
-        hasPermission = await channel.invokeMethod('checkOverlayPermission');
-      }
-      return hasPermission;
-    } catch (e, stackTrace) {
-      if (e is MissingPluginException) {
-        LoggerUtil.error(
-            TAG, 'Method not implemented on platform: ${e.message}');
-      } else {
-        LoggerUtil.error(
-            TAG, 'Error checking overlay permission', e, stackTrace);
-      }
-      return false;
-    }
-  }
-
-  static Future<void> _showSystemAlert(
-      MethodChannel channel, String title, String message) async {
-    try {
-      final bool? result = await channel.invokeMethod(
-          'showSystemAlert', {'title': title, 'message': message});
-      if (result == false) {
-        throw PlatformException(
-            code: 'ALERT_DISMISSED',
-            message: 'Alert was dismissed or failed to show');
-      }
-    } catch (e, stackTrace) {
-      LoggerUtil.error(TAG, 'Failed to show system alert', e, stackTrace);
-      if (e is PlatformException && e.code == 'PERMISSION_DENIED') {
-        await _ensureOverlayPermission(channel);
-      }
-      rethrow;
-    }
-  }
-
-  static Future<void> _closeSystemAlert(MethodChannel channel) async {
-    try {
-      await channel.invokeMethod('closeSystemAlert');
-    } catch (e, stackTrace) {
-      LoggerUtil.error(TAG, 'Error closing system alert', e, stackTrace);
-    }
-  }
-
   static void dispose() {
-    //_instance?.invoke('stopService');
+    FlutterBackgroundService().sendData({'action': 'stopService'});
     LoggerUtil.debug(TAG, 'Background service disposed');
   }
 }
