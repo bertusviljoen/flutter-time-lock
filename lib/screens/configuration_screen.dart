@@ -18,7 +18,6 @@ class _ConfigurationScreenState extends State<ConfigurationScreen> {
   void initState() {
     super.initState();
     _checkOverlayPermission();
-    _startBackgroundService();
   }
 
   Future<void> _checkOverlayPermission() async {
@@ -33,14 +32,11 @@ class _ConfigurationScreenState extends State<ConfigurationScreen> {
     }
   }
 
-  Future<void> _startBackgroundService() async {
-    await BackgroundService.startService(config);
-  }
-
   Future<void> _saveConfig() async {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
       await Configuration.saveConfig(config);
+      await BackgroundService.startService(config);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Configuration saved')),
       );

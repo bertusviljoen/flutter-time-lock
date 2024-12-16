@@ -10,6 +10,7 @@ void main() async {
 
   await Configuration.loadConfig();
   await BackgroundService.initialize();
+  await BackgroundService.startService(Configuration.config);
 
   runApp(MyApp());
 }

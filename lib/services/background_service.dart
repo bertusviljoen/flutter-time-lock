@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 
 class BackgroundService {
   static const platform = MethodChannel('com.example.flutter_time_lock/system');
+  static Timer? _timer;
 
   static Future<void> initialize() async {
     final androidConfig = FlutterBackgroundAndroidConfig(
@@ -48,12 +49,17 @@ class BackgroundService {
       // Convert minutes to seconds
       int intervalSeconds = intervalMinutes * 5;
 
-      Timer.periodic(Duration(seconds: intervalSeconds), (timer) {
+      _timer = Timer.periodic(Duration(seconds: intervalSeconds), (timer) {
         _showSystemAlert('Lock Alert', 'Time to lock the device!');
       });
     } catch (e) {
       print('Error starting background service: $e');
     }
+  }
+
+  static Future<void> resetService(Map<String, dynamic> config) async {
+    _timer?.cancel();
+    await startService(config);
   }
 
   static Future<void> _showSystemAlert(String title, String message) async {
