@@ -11,16 +11,35 @@ void main() async {
   try {
     LoggerUtil.debug('Main', 'Loading configuration');
     await Configuration.loadConfig();
+
     LoggerUtil.debug('Main', 'Initializing background service');
     await BackgroundService.initialize();
+
     LoggerUtil.debug('Main', 'Starting background service');
     await BackgroundService.startService(Configuration.config);
 
-    // Request necessary permissions for background execution
+    // Request necessary permissions
     const platform = MethodChannel('com.example.flutter_time_lock/system');
-    await platform.invokeMethod('requestForegroundServicePermission');
-    await platform.invokeMethod('requestWakeLockPermission');
-    await platform.invokeMethod('requestReceiveBootCompletedPermission');
+
+    // Request overlay permission if not granted
+    bool hasOverlayPermission =
+        await platform.invokeMethod('checkOverlayPermission');
+    if (!hasOverlayPermission) {
+      await platform.invokeMethod('requestOverlayPermission');
+    }
+
+    // Request kill background processes permission if not granted
+    bool hasKillPermission =
+        await platform.invokeMethod('checkKillBackgroundProcessesPermission');
+    if (!hasKillPermission) {
+      await platform.invokeMethod('requestKillBackgroundProcessesPermission');
+    }
+
+    // Request WiFi control permission if not granted
+    bool hasWifiPermission = await platform.invokeMethod('checkWifiPermission');
+    if (!hasWifiPermission) {
+      await platform.invokeMethod('requestWifiPermission');
+    }
   } catch (e, stackTrace) {
     LoggerUtil.error('Main', 'Error during initialization', e, stackTrace);
   }

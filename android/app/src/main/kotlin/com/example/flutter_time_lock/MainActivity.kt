@@ -176,15 +176,6 @@ class MainActivity: FlutterFragmentActivity() {
         }
     }
 
-    private fun disableWiFi() {
-        try {
-            val intent = Intent(Settings.Panel.ACTION_INTERNET_CONNECTIVITY)
-            startActivity(intent)
-        } catch (e: Exception) {
-            // Ignore WiFi settings errors
-        }
-    }
-
     private fun blockPackages() {
         val blockedPackages = listOf(
             "com.google.android.youtube",
