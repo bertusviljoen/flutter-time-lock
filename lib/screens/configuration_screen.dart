@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../configuration.dart';
 import '../services/background_service.dart';
+import '../utils/logger.dart';
 
 class ConfigurationScreen extends StatefulWidget {
   @override
@@ -20,12 +21,21 @@ class _ConfigurationScreenState extends State<ConfigurationScreen> {
   }
 
   Future<void> _saveConfig() async {
-    if (_formKey.currentState!.validate()) {
-      _formKey.currentState!.save();
-      await Configuration.saveConfig(config);
-      await BackgroundService.startService(config);
+    try {
+      if (_formKey.currentState!.validate()) {
+        _formKey.currentState!.save();
+        LoggerUtil.debug('ConfigurationScreen', 'Saving configuration: $config');
+        await Configuration.saveConfig(config);
+        LoggerUtil.debug('ConfigurationScreen', 'Starting background service with new config');
+        await BackgroundService.startService(config);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Configuration saved')),
+        );
+      }
+    } catch (e, stackTrace) {
+      LoggerUtil.error('ConfigurationScreen', 'Error saving configuration', e, stackTrace);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Configuration saved')),
+        SnackBar(content: Text('Error saving configuration')),
       );
     }
   }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../utils/logger.dart';
 
 class PermissionsScreen extends StatefulWidget {
   @override
@@ -27,8 +28,8 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
       setState(() {
         _overlayPermission = hasPermission;
       });
-    } catch (e) {
-      print('Error checking overlay permission: $e');
+    } catch (e, stackTrace) {
+      LoggerUtil.error('PermissionsScreen', 'Error checking overlay permission', e, stackTrace);
     }
   }
 
@@ -38,8 +39,8 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
       setState(() {
         _wifiPermission = hasPermission;
       });
-    } catch (e) {
-      print('Error checking wifi permission: $e');
+    } catch (e, stackTrace) {
+      LoggerUtil.error('PermissionsScreen', 'Error checking wifi permission', e, stackTrace);
     }
   }
 
@@ -50,8 +51,8 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
       setState(() {
         _killBackgroundProcessesPermission = hasPermission;
       });
-    } catch (e) {
-      print('Error checking kill background processes permission: $e');
+    } catch (e, stackTrace) {
+      LoggerUtil.error('PermissionsScreen', 'Error checking kill background processes permission', e, stackTrace);
       // If the method isn't implemented yet, assume permission is granted since it's in manifest
       setState(() {
         _killBackgroundProcessesPermission = true;
@@ -63,8 +64,8 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
     try {
       await platform.invokeMethod('requestOverlayPermission');
       _checkOverlayPermission();
-    } catch (e) {
-      print('Error requesting overlay permission: $e');
+    } catch (e, stackTrace) {
+      LoggerUtil.error('PermissionsScreen', 'Error requesting overlay permission', e, stackTrace);
     }
   }
 
@@ -72,8 +73,8 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
     try {
       await platform.invokeMethod('requestWifiPermission');
       _checkWifiPermission();
-    } catch (e) {
-      print('Error requesting wifi permission: $e');
+    } catch (e, stackTrace) {
+      LoggerUtil.error('PermissionsScreen', 'Error requesting wifi permission', e, stackTrace);
     }
   }
 
@@ -81,8 +82,8 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
     try {
       await platform.invokeMethod('requestKillBackgroundProcessesPermission');
       _checkKillBackgroundProcessesPermission();
-    } catch (e) {
-      print('Error requesting kill background processes permission: $e');
+    } catch (e, stackTrace) {
+      LoggerUtil.error('PermissionsScreen', 'Error requesting kill background processes permission', e, stackTrace);
       // If the method isn't implemented yet, assume permission is granted since it's in manifest
       setState(() {
         _killBackgroundProcessesPermission = true;
