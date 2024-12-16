@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:convert';
 import 'dart:async';
 import 'package:flutter_background/flutter_background.dart';
+import 'package:flutter/services.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -42,6 +43,7 @@ class ConfigurationScreen extends StatefulWidget {
 }
 
 class _ConfigurationScreenState extends State<ConfigurationScreen> {
+  static const platform = MethodChannel('com.example.flutter_time_lock/system');
   Map<String, dynamic> config = {
     'childPin': '',
     'adultPin': '',
@@ -53,7 +55,20 @@ class _ConfigurationScreenState extends State<ConfigurationScreen> {
   void initState() {
     super.initState();
     _checkAndCreateConfigFile();
+    _checkOverlayPermission();
     _startBackgroundService();
+  }
+
+  Future<void> _checkOverlayPermission() async {
+    try {
+      bool hasPermission =
+          await platform.invokeMethod('checkOverlayPermission');
+      if (!hasPermission) {
+        await platform.invokeMethod('requestOverlayPermission');
+      }
+    } catch (e) {
+      print('Error checking overlay permission: $e');
+    }
   }
 
   Future<void> _checkAndCreateConfigFile() async {
@@ -106,7 +121,7 @@ class _ConfigurationScreenState extends State<ConfigurationScreen> {
       }
 
       // Convert minutes to seconds
-      int intervalSeconds = intervalMinutes * 60;
+      int intervalSeconds = intervalMinutes * 5;
 
       Timer.periodic(Duration(seconds: intervalSeconds), (timer) {
         _showLockDialog();
@@ -116,24 +131,21 @@ class _ConfigurationScreenState extends State<ConfigurationScreen> {
     }
   }
 
+  Future<void> _showSystemAlert() async {
+    try {
+      await platform.invokeMethod('showSystemAlert',
+          {'title': 'Lock Alert', 'message': 'Time to lock the device!'});
+    } on PlatformException catch (e) {
+      print("Failed to show system alert: ${e.message}");
+      // If permission is denied, request it again
+      if (e.code == 'PERMISSION_DENIED') {
+        await _checkOverlayPermission();
+      }
+    }
+  }
+
   void _showLockDialog() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Lock Alert'),
-          content: Text('Time to lock the device!'),
-          actions: <Widget>[
-            TextButton(
-              child: Text('OK'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
-        );
-      },
-    );
+    _showSystemAlert(); // Always use system alert instead of Flutter dialog
   }
 
   @override
