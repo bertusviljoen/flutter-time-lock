@@ -17,6 +17,7 @@ import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 import android.content.pm.PackageManager
+import timber.log.Timber
 
 class MainActivity: FlutterFragmentActivity() {
     private val CHANNEL = "com.example.flutter_time_lock/system"
@@ -29,87 +30,92 @@ class MainActivity: FlutterFragmentActivity() {
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
         
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL).setMethodCallHandler { call, result ->
-            when {
-                call.method == "checkOverlayPermission" -> {
-                    result.success(Settings.canDrawOverlays(this))
-                }
-                call.method == "requestOverlayPermission" -> {
-                    val intent = Intent(
-                        Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                        Uri.parse("package:${packageName}")
-                    )
-                    startActivity(intent)
-                    result.success(null)
-                }
-                call.method == "checkWifiPermission" -> {
-                    result.success((applicationContext.getSystemService(WIFI_SERVICE) as WifiManager).isWifiEnabled)
-                }
-                call.method == "requestWifiPermission" -> {
-                    val intent = Intent(
-                        Settings.ACTION_WIFI_SETTINGS
-                    )
-                    startActivity(intent)
-                    result.success(null)
-                }
-                call.method == "checkKillBackgroundProcessesPermission" -> {
-                    val permission = "android.permission.KILL_BACKGROUND_PROCESSES"
-                    val granted = checkSelfPermission(permission) == PackageManager.PERMISSION_GRANTED
-                    result.success(granted)
-                }
-                call.method == "requestKillBackgroundProcessesPermission" -> {
-                    val permission = "android.permission.KILL_BACKGROUND_PROCESSES"
-                    if (checkSelfPermission(permission) != PackageManager.PERMISSION_GRANTED) {
-                        requestPermissions(arrayOf(permission), 1)
+            try {
+                when {
+                    call.method == "checkOverlayPermission" -> {
+                        result.success(Settings.canDrawOverlays(this))
                     }
-                    result.success(null)
-                }
-                call.method == "checkForegroundServicePermission" -> {
-                    result.success(true) // Foreground service permission is always granted
-                }
-                call.method == "requestForegroundServicePermission" -> {
-                    result.success(true) // Foreground service permission is always granted
-                }
-                call.method == "checkWakeLockPermission" -> {
-                    result.success(true) // Wake lock permission is always granted
-                }
-                call.method == "requestWakeLockPermission" -> {
-                    result.success(true) // Wake lock permission is always granted
-                }
-                call.method == "checkReceiveBootCompletedPermission" -> {
-                    result.success(true) // Receive boot completed permission is always granted
-                }
-                call.method == "requestReceiveBootCompletedPermission" -> {
-                    result.success(true) // Receive boot completed permission is always granted
-                }
-                call.method == "checkAccessWifiStatePermission" -> {
-                    result.success(true) // Access WiFi state permission is always granted
-                }
-                call.method == "requestAccessWifiStatePermission" -> {
-                    result.success(true) // Access WiFi state permission is always granted
-                }
-                call.method == "showSystemAlert" -> {
-                    if (!Settings.canDrawOverlays(this)) {
-                        result.error("PERMISSION_DENIED", "Overlay permission not granted", null)
-                        return@setMethodCallHandler
+                    call.method == "requestOverlayPermission" -> {
+                        val intent = Intent(
+                            Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                            Uri.parse("package:${packageName}")
+                        )
+                        startActivity(intent)
+                        result.success(null)
                     }
+                    call.method == "checkWifiPermission" -> {
+                        result.success((applicationContext.getSystemService(WIFI_SERVICE) as WifiManager).isWifiEnabled)
+                    }
+                    call.method == "requestWifiPermission" -> {
+                        val intent = Intent(
+                            Settings.ACTION_WIFI_SETTINGS
+                        )
+                        startActivity(intent)
+                        result.success(null)
+                    }
+                    call.method == "checkKillBackgroundProcessesPermission" -> {
+                        val permission = "android.permission.KILL_BACKGROUND_PROCESSES"
+                        val granted = checkSelfPermission(permission) == PackageManager.PERMISSION_GRANTED
+                        result.success(granted)
+                    }
+                    call.method == "requestKillBackgroundProcessesPermission" -> {
+                        val permission = "android.permission.KILL_BACKGROUND_PROCESSES"
+                        if (checkSelfPermission(permission) != PackageManager.PERMISSION_GRANTED) {
+                            requestPermissions(arrayOf(permission), 1)
+                        }
+                        result.success(null)
+                    }
+                    call.method == "checkForegroundServicePermission" -> {
+                        result.success(true) // Foreground service permission is always granted
+                    }
+                    call.method == "requestForegroundServicePermission" -> {
+                        result.success(true) // Foreground service permission is always granted
+                    }
+                    call.method == "checkWakeLockPermission" -> {
+                        result.success(true) // Wake lock permission is always granted
+                    }
+                    call.method == "requestWakeLockPermission" -> {
+                        result.success(true) // Wake lock permission is always granted
+                    }
+                    call.method == "checkReceiveBootCompletedPermission" -> {
+                        result.success(true) // Receive boot completed permission is always granted
+                    }
+                    call.method == "requestReceiveBootCompletedPermission" -> {
+                        result.success(true) // Receive boot completed permission is always granted
+                    }
+                    call.method == "checkAccessWifiStatePermission" -> {
+                        result.success(true) // Access WiFi state permission is always granted
+                    }
+                    call.method == "requestAccessWifiStatePermission" -> {
+                        result.success(true) // Access WiFi state permission is always granted
+                    }
+                    call.method == "showSystemAlert" -> {
+                        if (!Settings.canDrawOverlays(this)) {
+                            result.error("PERMISSION_DENIED", "Overlay permission not granted", null)
+                            return@setMethodCallHandler
+                        }
 
-                    val title = call.argument<String>("title") ?: "Alert"
-                    val message = call.argument<String>("message") ?: ""
+                        val title = call.argument<String>("title") ?: "Alert"
+                        val message = call.argument<String>("message") ?: ""
 
-                    // Ensure the dialog is shown on the main thread
-                    Handler(Looper.getMainLooper()).post {
-                        showOverlayWindow(title, message) { confirmed ->
-                            result.success(confirmed)
+                        // Ensure the dialog is shown on the main thread
+                        Handler(Looper.getMainLooper()).post {
+                            showOverlayWindow(title, message) { confirmed ->
+                                result.success(confirmed)
+                            }
                         }
                     }
-                }
-                call.method == "closeSystemAlert" -> {
-                    Handler(Looper.getMainLooper()).post {
-                        removeOverlayWindow()
-                        result.success(true)
+                    call.method == "closeSystemAlert" -> {
+                        Handler(Looper.getMainLooper()).post {
+                            removeOverlayWindow()
+                            result.success(true)
+                        }
                     }
+                    else -> result.notImplemented()
                 }
-                else -> result.notImplemented()
+            } catch (e: Exception) {
+                Timber.e(e, "Error handling method call: ${call.method}")
+                result.error("ERROR", "Error handling method call: ${call.method}", e.message)
             }
         }
     }
@@ -155,7 +161,7 @@ class MainActivity: FlutterFragmentActivity() {
         try {
             windowManager?.addView(overlayView, params)
         } catch (e: Exception) {
-            e.printStackTrace()
+            Timber.e(e, "Failed to add overlay view")
             callback(false)
         }
 
@@ -169,7 +175,7 @@ class MainActivity: FlutterFragmentActivity() {
                 overlayView = null
             }
         } catch (e: Exception) {
-            e.printStackTrace()
+            Timber.e(e, "Failed to remove overlay view")
         }
     }
 
@@ -177,9 +183,9 @@ class MainActivity: FlutterFragmentActivity() {
         try {
             val intent = Intent(Settings.Panel.ACTION_INTERNET_CONNECTIVITY)
             startActivity(intent)
-            android.util.Log.d("Flutter", "Opened WiFi settings panel")
+            Timber.d("Opened WiFi settings panel")
         } catch (e: Exception) {
-            android.util.Log.e("Flutter", "Failed to open WiFi settings: ${e.message}", e)
+            Timber.e(e, "Failed to open WiFi settings")
         }
     }
 
@@ -202,11 +208,11 @@ class MainActivity: FlutterFragmentActivity() {
                 try {
                     am.killBackgroundProcesses(pkg)
                 } catch (e: Exception) {
-                    android.util.Log.e("Flutter", "Failed to kill process: ${e.message}")
+                    Timber.e(e, "Failed to kill process: $pkg")
                 }
             }
         } catch (e: Exception) {
-            android.util.Log.e("Flutter", "Failed to block packages: ${e.message}")
+            Timber.e(e, "Failed to block packages")
         }
     }
 
