@@ -5,11 +5,13 @@ import android.net.Uri
 import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
-import io.flutter.embedding.android.FlutterActivity
+import android.content.DialogInterface
+import androidx.appcompat.app.AlertDialog
+import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 
-class MainActivity: FlutterActivity() {
+class MainActivity: FlutterFragmentActivity() {
     private val CHANNEL = "com.example.flutter_time_lock/system"
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
@@ -36,21 +38,26 @@ class MainActivity: FlutterActivity() {
 
                     val title = call.argument<String>("title") ?: "Alert"
                     val message = call.argument<String>("message") ?: ""
-                    
+
+                    // Ensure the dialog is shown on the main thread
                     Handler(Looper.getMainLooper()).post {
-                        BackgroundService.showSystemAlert(title, message)
+                        AlertDialog.Builder(this)
+                            .setTitle(title)
+                            .setMessage(message)
+                            .setPositiveButton("OK") { dialog: DialogInterface, which: Int ->
+                                // User confirmed the alert
+                                result.success(true)
+                            }
+                            .setNegativeButton("Cancel") { dialog: DialogInterface, which: Int ->
+                                // User canceled the alert
+                                result.success(false)
+                            }
+                            .setCancelable(false) // Prevent dismissal by tapping outside
+                            .show()
                     }
-                    result.success(null)
                 }
                 else -> result.notImplemented()
             }
         }
-
-        startBackgroundService()
-    }
-
-    private fun startBackgroundService() {
-        val intent = Intent(this, BackgroundService::class.java)
-        startService(intent)
     }
 }
