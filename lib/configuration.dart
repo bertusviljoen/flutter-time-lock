@@ -10,7 +10,9 @@ class Configuration {
     'adultPin': '',
     'lockTime': '',
     'lockInterval': '',
-    'timerUnit': 'seconds'
+    'timerUnit': 'seconds',
+    'unlockDuration': 20,
+    'lockTimeout': 10
   };
 
   static Future<String> get _localPath async {
@@ -35,7 +37,9 @@ class Configuration {
           'adultPin': '5678',
           'lockTime': '1',
           'lockInterval': '2',
-          'timerUnit': 'seconds'
+          'timerUnit': 'seconds',
+          'unlockDuration': 20,
+          'lockTimeout': 10
         };
         await file.writeAsString(jsonEncode(defaultConfig));
         _config = defaultConfig;
@@ -47,7 +51,9 @@ class Configuration {
         'adultPin': '5678',
         'lockTime': '1',
         'lockInterval': '2',
-        'timerUnit': 'seconds'
+        'timerUnit': 'seconds',
+        'unlockDuration': 20,
+        'lockTimeout': 10
       };
       _config = defaultConfig;
     }
@@ -56,6 +62,12 @@ class Configuration {
   static Map<String, dynamic> get config => _config;
 
   static Future<void> saveConfig(Map<String, dynamic> newConfig) async {
+    if (newConfig['unlockDuration'] is! int || newConfig['unlockDuration'] < 5 || newConfig['unlockDuration'] > 60) {
+      throw Exception('Invalid unlockDuration value');
+    }
+    if (newConfig['lockTimeout'] is! int || newConfig['lockTimeout'] < 1 || newConfig['lockTimeout'] > 60) {
+      throw Exception('Invalid lockTimeout value');
+    }
     _config = newConfig;
     final file = await _localFile;
     await file.writeAsString(jsonEncode(_config));
