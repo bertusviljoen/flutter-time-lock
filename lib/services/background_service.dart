@@ -86,13 +86,19 @@ class BackgroundService {
           int lockStartMinute = cycleStartMinute + unlockDuration;
           int lockEndMinute = lockStartMinute + lockTimeout;
 
+          print(
+              '$TAG: Current minute: $currentMinute, Cycle start: $cycleStartMinute, Lock start: $lockStartMinute, Lock end: $lockEndMinute');
+
           // Check if current time falls within the lock period
           if (currentMinute >= lockStartMinute &&
               currentMinute < lockEndMinute &&
               lockEndMinute <= 60) {
-            // Ensure we don't exceed hour boundary
-            await _showSystemAlert('Lock Alert',
-                'Time to lock the device for $lockTimeout minutes!');
+            // Fire and forget operation - don't await the result
+            _showSystemAlert('Lock Alert',
+                    'Time to lock the device for $lockTimeout minutes!')
+                .catchError((error) {
+              print('$TAG: Error in showing system alert: $error');
+            });
           } else {
             await _closeSystemAlert();
           }

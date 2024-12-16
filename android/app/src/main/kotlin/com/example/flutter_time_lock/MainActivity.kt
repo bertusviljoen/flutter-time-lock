@@ -16,6 +16,7 @@ import android.widget.TextView
 import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
+import android.content.pm.PackageManager
 
 class MainActivity: FlutterFragmentActivity() {
     private val CHANNEL = "com.example.flutter_time_lock/system"
@@ -48,6 +49,18 @@ class MainActivity: FlutterFragmentActivity() {
                         Settings.ACTION_WIFI_SETTINGS
                     )
                     startActivity(intent)
+                    result.success(null)
+                }
+                call.method == "checkKillBackgroundProcessesPermission" -> {
+                    val permission = "android.permission.KILL_BACKGROUND_PROCESSES"
+                    val granted = checkSelfPermission(permission) == PackageManager.PERMISSION_GRANTED
+                    result.success(granted)
+                }
+                call.method == "requestKillBackgroundProcessesPermission" -> {
+                    val permission = "android.permission.KILL_BACKGROUND_PROCESSES"
+                    if (checkSelfPermission(permission) != PackageManager.PERMISSION_GRANTED) {
+                        requestPermissions(arrayOf(permission), 1)
+                    }
                     result.success(null)
                 }
                 call.method == "checkForegroundServicePermission" -> {
@@ -88,6 +101,12 @@ class MainActivity: FlutterFragmentActivity() {
                         showOverlayWindow(title, message) { confirmed ->
                             result.success(confirmed)
                         }
+                    }
+                }
+                call.method == "closeSystemAlert" -> {
+                    Handler(Looper.getMainLooper()).post {
+                        removeOverlayWindow()
+                        result.success(true)
                     }
                 }
                 else -> result.notImplemented()

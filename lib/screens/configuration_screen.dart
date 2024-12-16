@@ -57,15 +57,16 @@ class _ConfigurationScreenState extends State<ConfigurationScreen> {
               ),
               TextFormField(
                 initialValue: config['unlockDuration'].toString(),
-                decoration: InputDecoration(labelText: 'Unlock Duration (minutes)'),
+                decoration:
+                    InputDecoration(labelText: 'Unlock Duration (minutes)'),
                 keyboardType: TextInputType.number,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Please enter an unlock duration';
                   }
                   final intValue = int.tryParse(value);
-                  if (intValue == null || intValue < 5 || intValue > 60) {
-                    return 'Please enter a valid number between 5 and 60';
+                  if (intValue == null || intValue < 1 || intValue > 60) {
+                    return 'Please enter a valid number between 1 and 60';
                   }
                   return null;
                 },
@@ -75,7 +76,8 @@ class _ConfigurationScreenState extends State<ConfigurationScreen> {
               ),
               TextFormField(
                 initialValue: config['lockTimeout'].toString(),
-                decoration: InputDecoration(labelText: 'Lock Timeout (minutes)'),
+                decoration:
+                    InputDecoration(labelText: 'Lock Timeout (minutes)'),
                 keyboardType: TextInputType.number,
                 validator: (value) {
                   if (value == null || value.isEmpty) {

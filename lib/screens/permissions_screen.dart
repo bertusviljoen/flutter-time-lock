@@ -10,12 +10,14 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
   static const platform = MethodChannel('com.example.flutter_time_lock/system');
   bool _overlayPermission = false;
   bool _wifiPermission = false;
+  bool _killBackgroundProcessesPermission = false;
 
   @override
   void initState() {
     super.initState();
     _checkOverlayPermission();
     _checkWifiPermission();
+    _checkKillBackgroundProcessesPermission();
   }
 
   Future<void> _checkOverlayPermission() async {
@@ -41,6 +43,22 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
     }
   }
 
+  Future<void> _checkKillBackgroundProcessesPermission() async {
+    try {
+      bool hasPermission =
+          await platform.invokeMethod('checkKillBackgroundProcessesPermission');
+      setState(() {
+        _killBackgroundProcessesPermission = hasPermission;
+      });
+    } catch (e) {
+      print('Error checking kill background processes permission: $e');
+      // If the method isn't implemented yet, assume permission is granted since it's in manifest
+      setState(() {
+        _killBackgroundProcessesPermission = true;
+      });
+    }
+  }
+
   Future<void> _requestOverlayPermission() async {
     try {
       await platform.invokeMethod('requestOverlayPermission');
@@ -56,6 +74,19 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
       _checkWifiPermission();
     } catch (e) {
       print('Error requesting wifi permission: $e');
+    }
+  }
+
+  Future<void> _requestKillBackgroundProcessesPermission() async {
+    try {
+      await platform.invokeMethod('requestKillBackgroundProcessesPermission');
+      _checkKillBackgroundProcessesPermission();
+    } catch (e) {
+      print('Error requesting kill background processes permission: $e');
+      // If the method isn't implemented yet, assume permission is granted since it's in manifest
+      setState(() {
+        _killBackgroundProcessesPermission = true;
+      });
     }
   }
 
@@ -97,13 +128,34 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
                 ),
               ],
             ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: <Widget>[
+                Text('Kill Background Processes Permission'),
+                Switch(
+                  value: _killBackgroundProcessesPermission,
+                  onChanged: (value) {
+                    if (!value) {
+                      _requestKillBackgroundProcessesPermission();
+                    }
+                  },
+                ),
+              ],
+            ),
+            SizedBox(height: 20),
             ElevatedButton(
               onPressed: _requestOverlayPermission,
               child: Text('Request Overlay Permission'),
             ),
+            SizedBox(height: 10),
             ElevatedButton(
               onPressed: _requestWifiPermission,
               child: Text('Request WiFi Permission'),
+            ),
+            SizedBox(height: 10),
+            ElevatedButton(
+              onPressed: _requestKillBackgroundProcessesPermission,
+              child: Text('Request Kill Background Processes Permission'),
             ),
           ],
         ),
