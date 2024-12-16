@@ -45,5 +45,12 @@ class MainActivity: FlutterActivity() {
                 else -> result.notImplemented()
             }
         }
+
+        startBackgroundService()
+    }
+
+    private fun startBackgroundService() {
+        val intent = Intent(this, BackgroundService::class.java)
+        startService(intent)
     }
 }
