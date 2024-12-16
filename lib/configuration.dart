@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'dart:convert';
 import 'package:path_provider/path_provider.dart';
-import 'package:flutter/material.dart';
 import 'utils/logger.dart';
 
 class Configuration {
@@ -38,7 +37,8 @@ class Configuration {
         _config = defaultConfig;
       }
     } catch (e, stackTrace) {
-      LoggerUtil.error('Configuration', 'Error reading configuration file', e, stackTrace);
+      LoggerUtil.error(
+          'Configuration', 'Error reading configuration file', e, stackTrace);
       final defaultConfig = {
         'adultPin': '5678',
         'unlockDuration': 20,
@@ -52,17 +52,22 @@ class Configuration {
 
   static Future<void> saveConfig(Map<String, dynamic> newConfig) async {
     try {
-      if (newConfig['unlockDuration'] is! int || newConfig['unlockDuration'] < 1 || newConfig['unlockDuration'] > 60) {
+      if (newConfig['unlockDuration'] is! int ||
+          newConfig['unlockDuration'] < 1 ||
+          newConfig['unlockDuration'] > 60) {
         throw Exception('Invalid unlockDuration value');
       }
-      if (newConfig['lockTimeout'] is! int || newConfig['lockTimeout'] < 1 || newConfig['lockTimeout'] > 60) {
+      if (newConfig['lockTimeout'] is! int ||
+          newConfig['lockTimeout'] < 1 ||
+          newConfig['lockTimeout'] > 60) {
         throw Exception('Invalid lockTimeout value');
       }
       _config = newConfig;
       final file = await _localFile;
       await file.writeAsString(jsonEncode(_config));
     } catch (e, stackTrace) {
-      LoggerUtil.error('Configuration', 'Error saving configuration file', e, stackTrace);
+      LoggerUtil.error(
+          'Configuration', 'Error saving configuration file', e, stackTrace);
       rethrow;
     }
   }

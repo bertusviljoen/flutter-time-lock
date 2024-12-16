@@ -17,7 +17,6 @@ import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 import android.content.pm.PackageManager
-import timber.log.Timber
 
 class MainActivity: FlutterFragmentActivity() {
     private val CHANNEL = "com.example.flutter_time_lock/system"
@@ -114,7 +113,6 @@ class MainActivity: FlutterFragmentActivity() {
                     else -> result.notImplemented()
                 }
             } catch (e: Exception) {
-                Timber.e(e, "Error handling method call: ${call.method}")
                 result.error("ERROR", "Error handling method call: ${call.method}", e.message)
             }
         }
@@ -161,7 +159,6 @@ class MainActivity: FlutterFragmentActivity() {
         try {
             windowManager?.addView(overlayView, params)
         } catch (e: Exception) {
-            Timber.e(e, "Failed to add overlay view")
             callback(false)
         }
 
@@ -175,7 +172,7 @@ class MainActivity: FlutterFragmentActivity() {
                 overlayView = null
             }
         } catch (e: Exception) {
-            Timber.e(e, "Failed to remove overlay view")
+            // Ignore removal errors
         }
     }
 
@@ -183,9 +180,8 @@ class MainActivity: FlutterFragmentActivity() {
         try {
             val intent = Intent(Settings.Panel.ACTION_INTERNET_CONNECTIVITY)
             startActivity(intent)
-            Timber.d("Opened WiFi settings panel")
         } catch (e: Exception) {
-            Timber.e(e, "Failed to open WiFi settings")
+            // Ignore WiFi settings errors
         }
     }
 
@@ -208,11 +204,11 @@ class MainActivity: FlutterFragmentActivity() {
                 try {
                     am.killBackgroundProcesses(pkg)
                 } catch (e: Exception) {
-                    Timber.e(e, "Failed to kill process: $pkg")
+                    // Ignore individual package kill errors
                 }
             }
         } catch (e: Exception) {
-            Timber.e(e, "Failed to block packages")
+            // Ignore package blocking errors
         }
     }
 

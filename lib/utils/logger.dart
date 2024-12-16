@@ -15,7 +15,10 @@ class LoggerUtil {
     _logger.w('[$tag] $message');
   }
 
-  static void error(String tag, String message, [dynamic error, StackTrace? stackTrace]) {
-    _logger.e('[$tag] $message', error, stackTrace);
+  static void error(String tag, String message,
+      [dynamic error, StackTrace? stackTrace]) {
+    var errorMessage =
+        error.toString() + '\n' + stackTrace.toString() + '\n' + message;
+    _logger.e('[$tag] $errorMessage');
   }
 }
