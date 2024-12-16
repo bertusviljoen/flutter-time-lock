@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'dart:io';
 import 'dart:convert';
+import 'package:flutter_background/flutter_background.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await FlutterBackground.initialize();
   runApp(MyApp());
 }
 
@@ -36,6 +39,7 @@ class _ConfigurationScreenState extends State<ConfigurationScreen> {
   void initState() {
     super.initState();
     _checkAndCreateConfigFile();
+    _startBackgroundService();
   }
 
   Future<void> _checkAndCreateConfigFile() async {
@@ -60,6 +64,33 @@ class _ConfigurationScreenState extends State<ConfigurationScreen> {
         config = defaultConfig;
       });
     }
+  }
+
+  Future<void> _startBackgroundService() async {
+    await FlutterBackground.enableBackgroundExecution();
+    Timer.periodic(Duration(minutes: int.parse(config['lockInterval'])), (timer) {
+      _showLockDialog();
+    });
+  }
+
+  void _showLockDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Lock Alert'),
+          content: Text('Time to lock the device!'),
+          actions: <Widget>[
+            TextButton(
+              child: Text('OK'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
