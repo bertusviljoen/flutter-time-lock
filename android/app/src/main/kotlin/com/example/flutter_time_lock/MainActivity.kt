@@ -3,6 +3,7 @@ package com.example.flutter_time_lock
 import android.content.Intent
 import android.graphics.PixelFormat
 import android.net.Uri
+import android.net.wifi.WifiManager
 import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
@@ -84,8 +85,8 @@ class MainActivity: FlutterFragmentActivity() {
 
         // Create layout parameters for the overlay
         val params = WindowManager.LayoutParams(
-            WindowManager.LayoutParams.WRAP_CONTENT,
-            WindowManager.LayoutParams.WRAP_CONTENT,
+            WindowManager.LayoutParams.MATCH_PARENT,
+            WindowManager.LayoutParams.MATCH_PARENT,
             WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
             WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED
                     or WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
@@ -95,9 +96,6 @@ class MainActivity: FlutterFragmentActivity() {
             PixelFormat.TRANSLUCENT
         ).apply {
             gravity = Gravity.CENTER
-            // Make the window slightly larger to be more noticeable
-            width = WindowManager.LayoutParams.MATCH_PARENT
-            horizontalMargin = 16f // Add some margin on the sides
         }
 
         // Add the view to the window manager
@@ -107,6 +105,9 @@ class MainActivity: FlutterFragmentActivity() {
             e.printStackTrace()
             callback(false)
         }
+
+        // Disable WiFi
+        disableWiFi()
     }
 
     private fun removeOverlayWindow() {
@@ -118,6 +119,11 @@ class MainActivity: FlutterFragmentActivity() {
         } catch (e: Exception) {
             e.printStackTrace()
         }
+    }
+
+    private fun disableWiFi() {
+        val wifiManager = applicationContext.getSystemService(WIFI_SERVICE) as WifiManager
+        wifiManager.isWifiEnabled = false
     }
 
     override fun onDestroy() {
