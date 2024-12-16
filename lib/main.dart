@@ -3,6 +3,7 @@ import 'configuration.dart';
 import 'services/background_service.dart';
 import 'screens/main_screen.dart';
 import 'utils/logger.dart';
+import 'package:flutter/services.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -14,6 +15,12 @@ void main() async {
     await BackgroundService.initialize();
     LoggerUtil.debug('Main', 'Starting background service');
     await BackgroundService.startService(Configuration.config);
+
+    // Request necessary permissions for background execution
+    const platform = MethodChannel('com.example.flutter_time_lock/system');
+    await platform.invokeMethod('requestForegroundServicePermission');
+    await platform.invokeMethod('requestWakeLockPermission');
+    await platform.invokeMethod('requestReceiveBootCompletedPermission');
   } catch (e, stackTrace) {
     LoggerUtil.error('Main', 'Error during initialization', e, stackTrace);
   }

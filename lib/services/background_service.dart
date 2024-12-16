@@ -34,6 +34,7 @@ class BackgroundService {
           LoggerUtil.error(TAG, 'Failed to initialize FlutterBackground with fallback config');
         }
       }
+      await startAndroidService();
     } catch (e, stackTrace) {
       LoggerUtil.error(TAG, 'Error initializing FlutterBackground', e, stackTrace);
     }
@@ -114,6 +115,7 @@ class BackgroundService {
       });
 
       LoggerUtil.debug(TAG, 'Background service started with unlockDuration: $unlockDuration minutes and lockTimeout: $lockTimeout minutes');
+      await startAndroidService();
     } catch (e, stackTrace) {
       LoggerUtil.error(TAG, 'Error starting background service', e, stackTrace);
     }
@@ -172,5 +174,13 @@ class BackgroundService {
   static void dispose() {
     _timer?.cancel();
     _timer = null;
+  }
+
+  static Future<void> startAndroidService() async {
+    try {
+      await platform.invokeMethod('startAndroidService');
+    } catch (e, stackTrace) {
+      LoggerUtil.error(TAG, 'Error starting Android background service', e, stackTrace);
+    }
   }
 }
