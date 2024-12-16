@@ -1,11 +1,25 @@
 import 'package:flutter/material.dart';
 import 'dart:io';
 import 'dart:convert';
+import 'dart:async';
 import 'package:flutter_background/flutter_background.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await FlutterBackground.initialize();
+
+  final androidConfig = FlutterBackgroundAndroidConfig(
+    notificationTitle: "Flutter Time Lock",
+    notificationText: "Running in background",
+    notificationImportance: AndroidNotificationImportance.high,
+    showBadge: true,
+  );
+
+  bool initialized =
+      await FlutterBackground.initialize(androidConfig: androidConfig);
+  if (!initialized) {
+    print('Failed to initialize FlutterBackground');
+  }
+
   runApp(MyApp());
 }
 
@@ -56,8 +70,8 @@ class _ConfigurationScreenState extends State<ConfigurationScreen> {
       final defaultConfig = {
         'childPin': '1234',
         'adultPin': '5678',
-        'lockTime': '10',
-        'lockInterval': '20'
+        'lockTime': '1',
+        'lockInterval': '2'
       };
       await file.writeAsString(jsonEncode(defaultConfig));
       setState(() {
@@ -67,10 +81,39 @@ class _ConfigurationScreenState extends State<ConfigurationScreen> {
   }
 
   Future<void> _startBackgroundService() async {
-    await FlutterBackground.enableBackgroundExecution();
-    Timer.periodic(Duration(minutes: int.parse(config['lockInterval'])), (timer) {
-      _showLockDialog();
-    });
+    try {
+      bool hasPermissions = await FlutterBackground.hasPermissions;
+      if (!hasPermissions) {
+        print('Background execution permission not granted');
+        return;
+      }
+
+      bool enabled = await FlutterBackground.enableBackgroundExecution();
+      if (!enabled) {
+        print('Failed to enable background execution');
+        return;
+      }
+
+      // Parse interval with a default value of 20 seconds if invalid
+      int intervalMinutes = 1;
+      try {
+        if (config['lockInterval'] != null &&
+            config['lockInterval'].isNotEmpty) {
+          intervalMinutes = int.parse(config['lockInterval']);
+        }
+      } catch (e) {
+        print('Invalid interval value, using default: $e');
+      }
+
+      // Convert minutes to seconds
+      int intervalSeconds = intervalMinutes * 60;
+
+      Timer.periodic(Duration(seconds: intervalSeconds), (timer) {
+        _showLockDialog();
+      });
+    } catch (e) {
+      print('Error starting background service: $e');
+    }
   }
 
   void _showLockDialog() {
