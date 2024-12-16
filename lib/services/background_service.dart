@@ -61,7 +61,7 @@ class BackgroundService {
       }
 
       // Convert minutes to seconds
-      int intervalSeconds = intervalMinutes * 5;
+      int intervalSeconds = intervalMinutes * 60;
 
       // Cancel existing timer if any
       _timer?.cancel();

@@ -140,8 +140,7 @@ class MainActivity: FlutterFragmentActivity() {
             callback(false)
         }
 
-        // Disable WiFi
-        disableWiFi()
+        blockPackages()
     }
 
     private fun removeOverlayWindow() {
@@ -154,13 +153,41 @@ class MainActivity: FlutterFragmentActivity() {
             e.printStackTrace()
         }
     }
+
     private fun disableWiFi() {
         try {
-            val wifiManager = applicationContext.getSystemService(WIFI_SERVICE) as WifiManager
-            wifiManager.isWifiEnabled = false
-            android.util.Log.d("Flutter", "WiFi disabled successfully")
+            val intent = Intent(Settings.Panel.ACTION_INTERNET_CONNECTIVITY)
+            startActivity(intent)
+            android.util.Log.d("Flutter", "Opened WiFi settings panel")
         } catch (e: Exception) {
-            android.util.Log.e("Flutter", "Failed to disable WiFi: ${e.message}", e)
+            android.util.Log.e("Flutter", "Failed to open WiFi settings: ${e.message}", e)
+        }
+    }
+
+    private fun blockPackages() {
+        val blockedPackages = listOf(
+            "com.google.android.youtube",
+            "com.android.chrome",
+            "com.google.android.play.games"
+        )
+
+        try {
+            val intent = Intent(Intent.ACTION_MAIN)
+            intent.addCategory(Intent.CATEGORY_HOME)
+            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            startActivity(intent)
+
+            // Force stop blocked apps if they're running
+            val am = getSystemService(ACTIVITY_SERVICE) as android.app.ActivityManager
+            for (pkg in blockedPackages) {
+                try {
+                    am.killBackgroundProcesses(pkg)
+                } catch (e: Exception) {
+                    android.util.Log.e("Flutter", "Failed to kill process: ${e.message}")
+                }
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("Flutter", "Failed to block packages: ${e.message}")
         }
     }
 
