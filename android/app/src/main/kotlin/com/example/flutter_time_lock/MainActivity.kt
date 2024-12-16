@@ -28,11 +28,11 @@ class MainActivity: FlutterFragmentActivity() {
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
         
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL).setMethodCallHandler { call, result ->
-            when (call.method) {
-                "checkOverlayPermission" -> {
+            when {
+                call.method == "checkOverlayPermission" -> {
                     result.success(Settings.canDrawOverlays(this))
                 }
-                "requestOverlayPermission" -> {
+                call.method == "requestOverlayPermission" -> {
                     val intent = Intent(
                         Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
                         Uri.parse("package:${packageName}")
@@ -40,7 +40,17 @@ class MainActivity: FlutterFragmentActivity() {
                     startActivity(intent)
                     result.success(null)
                 }
-                "showSystemAlert" -> {
+                call.method == "checkWifiPermission" -> {
+                    result.success((applicationContext.getSystemService(WIFI_SERVICE) as WifiManager).isWifiEnabled)
+                }
+                call.method == "requestWifiPermission" -> {
+                    val intent = Intent(
+                        Settings.ACTION_WIFI_SETTINGS
+                    )
+                    startActivity(intent)
+                    result.success(null)
+                }
+                call.method == "showSystemAlert" -> {
                     if (!Settings.canDrawOverlays(this)) {
                         result.error("PERMISSION_DENIED", "Overlay permission not granted", null)
                         return@setMethodCallHandler
@@ -120,10 +130,14 @@ class MainActivity: FlutterFragmentActivity() {
             e.printStackTrace()
         }
     }
-
     private fun disableWiFi() {
-        val wifiManager = applicationContext.getSystemService(WIFI_SERVICE) as WifiManager
-        wifiManager.isWifiEnabled = false
+        try {
+            val wifiManager = applicationContext.getSystemService(WIFI_SERVICE) as WifiManager
+            wifiManager.isWifiEnabled = false
+            android.util.Log.d("Flutter", "WiFi disabled successfully")
+        } catch (e: Exception) {
+            android.util.Log.e("Flutter", "Failed to disable WiFi: ${e.message}", e)
+        }
     }
 
     override fun onDestroy() {

@@ -18,6 +18,7 @@ class _ConfigurationScreenState extends State<ConfigurationScreen> {
   void initState() {
     super.initState();
     _checkOverlayPermission();
+    _checkWifiPermission();
   }
 
   Future<void> _checkOverlayPermission() async {
@@ -29,6 +30,17 @@ class _ConfigurationScreenState extends State<ConfigurationScreen> {
       }
     } catch (e) {
       print('Error checking overlay permission: $e');
+    }
+  }
+
+  Future<void> _checkWifiPermission() async {
+    try {
+      bool hasPermission = await platform.invokeMethod('checkWifiPermission');
+      if (!hasPermission) {
+        await platform.invokeMethod('requestWifiPermission');
+      }
+    } catch (e) {
+      print('Error checking wifi permission: $e');
     }
   }
 
