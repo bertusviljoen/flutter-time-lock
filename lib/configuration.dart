@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:convert';
+import 'package:path_provider/path_provider.dart';
 import 'package:flutter/material.dart';
 
 class Configuration {
@@ -12,12 +13,19 @@ class Configuration {
     'timerUnit': 'seconds'
   };
 
-  static Future<void> loadConfig() async {
-    final directory = await Directory.systemTemp.createTemp();
-    final path = '${directory.path}/$_configFileName';
-    final file = File(path);
+  static Future<String> get _localPath async {
+    final directory = await getApplicationDocumentsDirectory();
+    return directory.path;
+  }
 
+  static Future<File> get _localFile async {
+    final path = await _localPath;
+    return File('$path/$_configFileName');
+  }
+
+  static Future<void> loadConfig() async {
     try {
+      final file = await _localFile;
       if (await file.exists()) {
         final contents = await file.readAsString();
         _config = jsonDecode(contents);
@@ -49,9 +57,7 @@ class Configuration {
 
   static Future<void> saveConfig(Map<String, dynamic> newConfig) async {
     _config = newConfig;
-    final directory = await Directory.systemTemp.createTemp();
-    final path = '${directory.path}/$_configFileName';
-    final file = File(path);
+    final file = await _localFile;
     await file.writeAsString(jsonEncode(_config));
   }
 }

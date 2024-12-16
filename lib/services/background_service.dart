@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 class BackgroundService {
   static const platform = MethodChannel('com.example.flutter_time_lock/system');
   static Timer? _timer;
+  static const String TAG = "BackgroundService";
 
   static Future<void> initialize() async {
     final androidConfig = FlutterBackgroundAndroidConfig(
@@ -17,7 +18,20 @@ class BackgroundService {
     bool initialized =
         await FlutterBackground.initialize(androidConfig: androidConfig);
     if (!initialized) {
-      print('Failed to initialize FlutterBackground');
+      print('$TAG: Failed to initialize FlutterBackground');
+      // Try to initialize with minimal config if initial attempt fails
+      final fallbackConfig = FlutterBackgroundAndroidConfig(
+        notificationTitle: "Flutter Time Lock",
+        notificationText: "Running in background",
+        notificationImportance: AndroidNotificationImportance.high,
+        showBadge: false,
+      );
+      initialized =
+          await FlutterBackground.initialize(androidConfig: fallbackConfig);
+      if (!initialized) {
+        print(
+            '$TAG: Failed to initialize FlutterBackground with fallback config');
+      }
     }
   }
 
@@ -25,13 +39,13 @@ class BackgroundService {
     try {
       bool hasPermissions = await FlutterBackground.hasPermissions;
       if (!hasPermissions) {
-        print('Background execution permission not granted');
+        print('$TAG: Background execution permission not granted');
         return;
       }
 
       bool enabled = await FlutterBackground.enableBackgroundExecution();
       if (!enabled) {
-        print('Failed to enable background execution');
+        print('$TAG: Failed to enable background execution');
         return;
       }
 
@@ -43,17 +57,40 @@ class BackgroundService {
           intervalMinutes = int.parse(config['lockInterval']);
         }
       } catch (e) {
-        print('Invalid interval value, using default: $e');
+        print('$TAG: Invalid interval value, using default: $e');
       }
 
       // Convert minutes to seconds
       int intervalSeconds = intervalMinutes * 5;
 
-      _timer = Timer.periodic(Duration(seconds: intervalSeconds), (timer) {
-        _showSystemAlert('Lock Alert', 'Time to lock the device!');
+      // Cancel existing timer if any
+      _timer?.cancel();
+
+      // Create a periodic timer that will show the alert
+      _timer =
+          Timer.periodic(Duration(seconds: intervalSeconds), (timer) async {
+        // Ensure we have overlay permission before showing alert
+        bool hasPermission = await _ensureOverlayPermission();
+        if (hasPermission) {
+          // Try multiple times to show the alert to ensure delivery
+          for (int i = 0; i < 3; i++) {
+            try {
+              await _showSystemAlert('Lock Alert', 'Time to lock the device!');
+              break; // Break if successful
+            } catch (e) {
+              print('$TAG: Attempt $i to show alert failed: $e');
+              await Future.delayed(Duration(seconds: 1)); // Wait before retry
+            }
+          }
+        } else {
+          print('$TAG: Cannot show alert - overlay permission not granted');
+        }
       });
+
+      print(
+          '$TAG: Background service started with interval: $intervalSeconds seconds');
     } catch (e) {
-      print('Error starting background service: $e');
+      print('$TAG: Error starting background service: $e');
     }
   }
 
@@ -62,28 +99,45 @@ class BackgroundService {
     await startService(config);
   }
 
-  static Future<void> _showSystemAlert(String title, String message) async {
-    try {
-      await platform.invokeMethod(
-          'showSystemAlert', {'title': title, 'message': message});
-    } on PlatformException catch (e) {
-      print("Failed to show system alert: ${e.message}");
-      // If permission is denied, request it again
-      if (e.code == 'PERMISSION_DENIED') {
-        await _checkOverlayPermission();
-      }
-    }
-  }
-
-  static Future<void> _checkOverlayPermission() async {
+  static Future<bool> _ensureOverlayPermission() async {
     try {
       bool hasPermission =
           await platform.invokeMethod('checkOverlayPermission');
       if (!hasPermission) {
         await platform.invokeMethod('requestOverlayPermission');
+        // Check again after request
+        hasPermission = await platform.invokeMethod('checkOverlayPermission');
       }
+      return hasPermission;
     } catch (e) {
-      print('Error checking overlay permission: $e');
+      print('$TAG: Error checking overlay permission: $e');
+      return false;
     }
+  }
+
+  static Future<void> _showSystemAlert(String title, String message) async {
+    try {
+      final bool? result = await platform.invokeMethod(
+          'showSystemAlert', {'title': title, 'message': message});
+      if (result == false) {
+        throw PlatformException(
+            code: 'ALERT_DISMISSED',
+            message: 'Alert was dismissed or failed to show');
+      }
+    } on PlatformException catch (e) {
+      print("$TAG: Failed to show system alert: ${e.message}");
+      if (e.code == 'PERMISSION_DENIED') {
+        await _ensureOverlayPermission();
+      }
+      rethrow; // Rethrow to allow retry in startService
+    } catch (e) {
+      print('$TAG: Unexpected error showing system alert: $e');
+      rethrow; // Rethrow to allow retry in startService
+    }
+  }
+
+  static void dispose() {
+    _timer?.cancel();
+    _timer = null;
   }
 }
