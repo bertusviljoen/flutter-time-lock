@@ -1,7 +1,11 @@
 import 'package:flutter_background/flutter_background.dart';
 import 'dart:async';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 class BackgroundService {
+  static const platform = MethodChannel('com.example.flutter_time_lock/system');
+
   static Future<void> initialize() async {
     final androidConfig = FlutterBackgroundAndroidConfig(
       notificationTitle: "Flutter Time Lock",
@@ -55,5 +59,28 @@ class BackgroundService {
 
   static Future<void> _showLockDialog() async {
     // Implement the logic to show the lock dialog
+  }
+
+  static Future<void> _showSystemAlert(String title, String message) async {
+    try {
+      await platform.invokeMethod('showSystemAlert', {'title': title, 'message': message});
+    } on PlatformException catch (e) {
+      print("Failed to show system alert: ${e.message}");
+      // If permission is denied, request it again
+      if (e.code == 'PERMISSION_DENIED') {
+        await _checkOverlayPermission();
+      }
+    }
+  }
+
+  static Future<void> _checkOverlayPermission() async {
+    try {
+      bool hasPermission = await platform.invokeMethod('checkOverlayPermission');
+      if (!hasPermission) {
+        await platform.invokeMethod('requestOverlayPermission');
+      }
+    } catch (e) {
+      print('Error checking overlay permission: $e');
+    }
   }
 }
