@@ -50,8 +50,8 @@ class BackgroundService {
       }
 
       // Parse unlockDuration and lockTimeout with default values if invalid
-      int unlockDuration = 5;
-      int lockTimeout = 5;
+      int unlockDuration = 1;
+      int lockTimeout = 1;
       try {
         if (config['unlockDuration'] != null) {
           unlockDuration = int.parse(config['unlockDuration'].toString());
