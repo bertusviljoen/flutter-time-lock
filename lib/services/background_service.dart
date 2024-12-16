@@ -49,33 +49,38 @@ class BackgroundService {
         return;
       }
 
-      // Parse interval with a default value of 20 seconds if invalid
-      int intervalMinutes = 1;
+      // Parse unlockDuration and lockTimeout with default values if invalid
+      int unlockDuration = 20;
+      int lockTimeout = 10;
       try {
-        if (config['lockInterval'] != null &&
-            config['lockInterval'].isNotEmpty) {
-          intervalMinutes = int.parse(config['lockInterval']);
+        if (config['unlockDuration'] != null) {
+          unlockDuration = int.parse(config['unlockDuration'].toString());
+        }
+        if (config['lockTimeout'] != null) {
+          lockTimeout = int.parse(config['lockTimeout'].toString());
         }
       } catch (e) {
-        print('$TAG: Invalid interval value, using default: $e');
+        print('$TAG: Invalid unlockDuration or lockTimeout value, using default: $e');
       }
 
       // Convert minutes to seconds
-      int intervalSeconds = intervalMinutes * 60;
+      int unlockDurationSeconds = unlockDuration * 60;
+      int lockTimeoutSeconds = lockTimeout * 60;
 
       // Cancel existing timer if any
       _timer?.cancel();
 
       // Create a periodic timer that will show the alert
-      _timer =
-          Timer.periodic(Duration(seconds: intervalSeconds), (timer) async {
+      _timer = Timer.periodic(Duration(hours: 1), (timer) async {
         // Ensure we have overlay permission before showing alert
         bool hasPermission = await _ensureOverlayPermission();
         if (hasPermission) {
           // Try multiple times to show the alert to ensure delivery
           for (int i = 0; i < 3; i++) {
             try {
-              await _showSystemAlert('Lock Alert', 'Time to lock the device!');
+              await _showSystemAlert('Unlock Alert', 'Time to unlock the device for $unlockDuration minutes!');
+              await Future.delayed(Duration(seconds: unlockDurationSeconds));
+              await _showSystemAlert('Lock Alert', 'Time to lock the device for $lockTimeout minutes!');
               break; // Break if successful
             } catch (e) {
               print('$TAG: Attempt $i to show alert failed: $e');
@@ -88,7 +93,7 @@ class BackgroundService {
       });
 
       print(
-          '$TAG: Background service started with interval: $intervalSeconds seconds');
+          '$TAG: Background service started with unlockDuration: $unlockDuration minutes and lockTimeout: $lockTimeout minutes');
     } catch (e) {
       print('$TAG: Error starting background service: $e');
     }
