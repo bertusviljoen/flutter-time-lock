@@ -52,7 +52,7 @@ class Configuration {
 
   static Future<void> saveConfig(Map<String, dynamic> newConfig) async {
     try {
-      if (newConfig['unlockDuration'] is! int || newConfig['unlockDuration'] < 5 || newConfig['unlockDuration'] > 60) {
+      if (newConfig['unlockDuration'] is! int || newConfig['unlockDuration'] < 1 || newConfig['unlockDuration'] > 60) {
         throw Exception('Invalid unlockDuration value');
       }
       if (newConfig['lockTimeout'] is! int || newConfig['lockTimeout'] < 1 || newConfig['lockTimeout'] > 60) {
