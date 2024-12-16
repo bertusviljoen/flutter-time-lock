@@ -12,23 +12,28 @@ class BackgroundService {
 
   static Future<void> initialize() async {
     try {
-      _instance = FlutterBackgroundService();
+      if (true) {
+        _instance = FlutterBackgroundService();
 
-      // Configure background service
-      await _instance!.configure(
-        androidConfiguration: AndroidConfiguration(
-          onStart: onStart,
-          autoStart: true,
-          isForegroundMode: true,
-          notificationChannelId: 'flutter_time_lock_channel',
-          initialNotificationTitle: 'Flutter Time Lock',
-          initialNotificationContent: 'Running',
-          foregroundServiceNotificationId: 1,
-        ),
-        iosConfiguration: IosConfiguration(),
-      );
+        // Configure background service
+        await _instance!.configure(
+          androidConfiguration: AndroidConfiguration(
+            onStart: onStart,
+            autoStart: true,
+            isForegroundMode: true,
+            notificationChannelId: 'flutter_time_lock_channel',
+            initialNotificationTitle: 'Flutter Time Lock',
+            initialNotificationContent: 'Running',
+            foregroundServiceNotificationId: 1,
+          ),
+          iosConfiguration: IosConfiguration(),
+        );
 
-      LoggerUtil.debug(TAG, 'Background service initialized');
+        LoggerUtil.debug(TAG, 'Background service initialized');
+      } else {
+        LoggerUtil.debug(
+            TAG, 'Not initializing background service in secondary isolate');
+      }
     } catch (e, stackTrace) {
       LoggerUtil.error(
           TAG, 'Error initializing background service', e, stackTrace);
@@ -163,7 +168,13 @@ class BackgroundService {
       }
       return hasPermission;
     } catch (e, stackTrace) {
-      LoggerUtil.error(TAG, 'Error checking overlay permission', e, stackTrace);
+      if (e is MissingPluginException) {
+        LoggerUtil.error(
+            TAG, 'Method not implemented on platform: ${e.message}');
+      } else {
+        LoggerUtil.error(
+            TAG, 'Error checking overlay permission', e, stackTrace);
+      }
       return false;
     }
   }
