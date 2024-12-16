@@ -1,6 +1,5 @@
 import 'package:flutter_background/flutter_background.dart';
 import 'dart:async';
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 class BackgroundService {
@@ -50,20 +49,17 @@ class BackgroundService {
       int intervalSeconds = intervalMinutes * 5;
 
       Timer.periodic(Duration(seconds: intervalSeconds), (timer) {
-        _showLockDialog();
+        _showSystemAlert('Lock Alert', 'Time to lock the device!');
       });
     } catch (e) {
       print('Error starting background service: $e');
     }
   }
 
-  static Future<void> _showLockDialog() async {
-    // Implement the logic to show the lock dialog
-  }
-
   static Future<void> _showSystemAlert(String title, String message) async {
     try {
-      await platform.invokeMethod('showSystemAlert', {'title': title, 'message': message});
+      await platform.invokeMethod(
+          'showSystemAlert', {'title': title, 'message': message});
     } on PlatformException catch (e) {
       print("Failed to show system alert: ${e.message}");
       // If permission is denied, request it again
@@ -75,7 +71,8 @@ class BackgroundService {
 
   static Future<void> _checkOverlayPermission() async {
     try {
-      bool hasPermission = await platform.invokeMethod('checkOverlayPermission');
+      bool hasPermission =
+          await platform.invokeMethod('checkOverlayPermission');
       if (!hasPermission) {
         await platform.invokeMethod('requestOverlayPermission');
       }

@@ -37,23 +37,6 @@ class _ConfigurationScreenState extends State<ConfigurationScreen> {
     await BackgroundService.startService(config);
   }
 
-  Future<void> _showSystemAlert() async {
-    try {
-      await platform.invokeMethod('showSystemAlert',
-          {'title': 'Lock Alert', 'message': 'Time to lock the device!'});
-    } on PlatformException catch (e) {
-      print("Failed to show system alert: ${e.message}");
-      // If permission is denied, request it again
-      if (e.code == 'PERMISSION_DENIED') {
-        await _checkOverlayPermission();
-      }
-    }
-  }
-
-  void _showLockDialog() {
-    _showSystemAlert(); // Always use system alert instead of Flutter dialog
-  }
-
   Future<void> _saveConfig() async {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
