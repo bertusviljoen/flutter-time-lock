@@ -1,6 +1,5 @@
 package com.example.flutter_time_lock
 
-import android.app.AlertDialog
 import android.content.Intent
 import android.net.Uri
 import android.os.Handler
@@ -39,15 +38,7 @@ class MainActivity: FlutterActivity() {
                     val message = call.argument<String>("message") ?: ""
                     
                     Handler(Looper.getMainLooper()).post {
-                        val builder = AlertDialog.Builder(this, android.R.style.Theme_Material_Dialog_Alert)
-                            .setTitle(title)
-                            .setMessage(message)
-                            .setPositiveButton("OK") { dialog, _ -> dialog.dismiss() }
-                            .setCancelable(false)
-
-                        val dialog = builder.create()
-                        dialog.window?.setType(android.view.WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY)
-                        dialog.show()
+                        BackgroundService.showSystemAlert(title, message)
                     }
                     result.success(null)
                 }
