@@ -50,8 +50,8 @@ class BackgroundService {
       }
 
       // Parse unlockDuration and lockTimeout with default values if invalid
-      int unlockDuration = 20;
-      int lockTimeout = 10;
+      int unlockDuration = 5;
+      int lockTimeout = 5;
       try {
         if (config['unlockDuration'] != null) {
           unlockDuration = int.parse(config['unlockDuration'].toString());
@@ -60,12 +60,9 @@ class BackgroundService {
           lockTimeout = int.parse(config['lockTimeout'].toString());
         }
       } catch (e) {
-        print('$TAG: Invalid unlockDuration or lockTimeout value, using default: $e');
+        print(
+            '$TAG: Invalid unlockDuration or lockTimeout value, using default: $e');
       }
-
-      // Convert minutes to seconds
-      int unlockDurationSeconds = unlockDuration * 60;
-      int lockTimeoutSeconds = lockTimeout * 60;
 
       // Cancel existing timer if any
       _timer?.cancel();
@@ -77,23 +74,26 @@ class BackgroundService {
         if (hasPermission) {
           DateTime now = DateTime.now();
           int currentMinute = now.minute;
-          int currentSecond = now.second;
 
-          // Calculate the start and end times for unlock duration and lock timeout
-          int unlockStartMinute = 0;
-          int unlockEndMinute = unlockDuration;
-          int lockStartMinute = unlockEndMinute;
+          // Calculate how many complete cycles have passed in this hour
+          int completedCycles = currentMinute ~/ (unlockDuration + lockTimeout);
+
+          // Calculate the start of the current cycle
+          int cycleStartMinute =
+              completedCycles * (unlockDuration + lockTimeout);
+
+          // Calculate lock period start and end for current cycle
+          int lockStartMinute = cycleStartMinute + unlockDuration;
           int lockEndMinute = lockStartMinute + lockTimeout;
 
-          if (currentMinute >= unlockStartMinute && currentMinute < unlockEndMinute) {
-            // Within unlock duration
-            await _showSystemAlert('Unlock Alert', 'Time to unlock the device for $unlockDuration minutes!');
-          } else if (currentMinute >= lockStartMinute && currentMinute < lockEndMinute) {
-            // Within lock timeout
-            await _showSystemAlert('Lock Alert', 'Time to lock the device for $lockTimeout minutes!');
+          // Check if current time falls within the lock period
+          if (currentMinute >= lockStartMinute &&
+              currentMinute < lockEndMinute &&
+              lockEndMinute <= 60) {
+            // Ensure we don't exceed hour boundary
+            await _showSystemAlert('Lock Alert',
+                'Time to lock the device for $lockTimeout minutes!');
           } else {
-            // Outside of unlock duration and lock timeout
-            // Close the dialog if it is open
             await _closeSystemAlert();
           }
         } else {
