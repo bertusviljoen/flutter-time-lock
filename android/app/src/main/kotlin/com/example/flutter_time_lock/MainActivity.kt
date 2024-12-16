@@ -50,6 +50,30 @@ class MainActivity: FlutterFragmentActivity() {
                     startActivity(intent)
                     result.success(null)
                 }
+                call.method == "checkForegroundServicePermission" -> {
+                    result.success(true) // Foreground service permission is always granted
+                }
+                call.method == "requestForegroundServicePermission" -> {
+                    result.success(true) // Foreground service permission is always granted
+                }
+                call.method == "checkWakeLockPermission" -> {
+                    result.success(true) // Wake lock permission is always granted
+                }
+                call.method == "requestWakeLockPermission" -> {
+                    result.success(true) // Wake lock permission is always granted
+                }
+                call.method == "checkReceiveBootCompletedPermission" -> {
+                    result.success(true) // Receive boot completed permission is always granted
+                }
+                call.method == "requestReceiveBootCompletedPermission" -> {
+                    result.success(true) // Receive boot completed permission is always granted
+                }
+                call.method == "checkAccessWifiStatePermission" -> {
+                    result.success(true) // Access WiFi state permission is always granted
+                }
+                call.method == "requestAccessWifiStatePermission" -> {
+                    result.success(true) // Access WiFi state permission is always granted
+                }
                 call.method == "showSystemAlert" -> {
                     if (!Settings.canDrawOverlays(this)) {
                         result.error("PERMISSION_DENIED", "Overlay permission not granted", null)
