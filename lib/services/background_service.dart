@@ -14,6 +14,7 @@ class BackgroundService {
       _instance = BackgroundService();
 
       LoggerUtil.debug(TAG, 'Background service initialized');
+
     } catch (e, stackTrace) {
       LoggerUtil.error(
           TAG, 'Error initializing background service', e, stackTrace);
@@ -146,7 +147,13 @@ class BackgroundService {
       }
       return hasPermission;
     } catch (e, stackTrace) {
-      LoggerUtil.error(TAG, 'Error checking overlay permission', e, stackTrace);
+      if (e is MissingPluginException) {
+        LoggerUtil.error(
+            TAG, 'Method not implemented on platform: ${e.message}');
+      } else {
+        LoggerUtil.error(
+            TAG, 'Error checking overlay permission', e, stackTrace);
+      }
       return false;
     }
   }
