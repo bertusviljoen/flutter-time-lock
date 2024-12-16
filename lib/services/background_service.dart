@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:ui';
-import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:flutter/services.dart';
 import '../utils/logger.dart';
 import '../configuration.dart';
@@ -8,32 +7,14 @@ import '../configuration.dart';
 class BackgroundService {
   static const platform = MethodChannel('com.example.flutter_time_lock/system');
   static const String TAG = "BackgroundService";
-  static FlutterBackgroundService? _instance;
+  static BackgroundService? _instance;
 
   static Future<void> initialize() async {
     try {
-      if (true) {
-        _instance = FlutterBackgroundService();
+      _instance = BackgroundService();
 
-        // Configure background service
-        await _instance!.configure(
-          androidConfiguration: AndroidConfiguration(
-            onStart: onStart,
-            autoStart: true,
-            isForegroundMode: true,
-            notificationChannelId: 'flutter_time_lock_channel',
-            initialNotificationTitle: 'Flutter Time Lock',
-            initialNotificationContent: 'Running',
-            foregroundServiceNotificationId: 1,
-          ),
-          iosConfiguration: IosConfiguration(),
-        );
+      LoggerUtil.debug(TAG, 'Background service initialized');
 
-        LoggerUtil.debug(TAG, 'Background service initialized');
-      } else {
-        LoggerUtil.debug(
-            TAG, 'Not initializing background service in secondary isolate');
-      }
     } catch (e, stackTrace) {
       LoggerUtil.error(
           TAG, 'Error initializing background service', e, stackTrace);
@@ -41,8 +22,7 @@ class BackgroundService {
   }
 
   @pragma('vm:entry-point')
-  static Future<void> onStart(ServiceInstance service) async {
-    DartPluginRegistrant.ensureInitialized();
+  static Future<void> onStart() async {
     LoggerUtil.debug(TAG, 'Background service started');
 
     // Initialize method channel in background isolate
@@ -121,9 +101,9 @@ class BackgroundService {
     }
 
     // Listen for configuration updates
-    service.on('updateConfig').listen((event) async {
-      if (event != null) {
-        config = Map<String, dynamic>.from(event);
+    methodChannel.setMethodCallHandler((call) async {
+      if (call.method == 'updateConfig') {
+        config = Map<String, dynamic>.from(call.arguments);
         timer?.cancel();
         startTimer();
         LoggerUtil.debug(TAG, 'Configuration updated: $config');
@@ -137,7 +117,6 @@ class BackgroundService {
   static Future<void> startService(Map<String, dynamic> config) async {
     try {
       if (_instance != null) {
-        await _instance!.startService();
         _instance!.invoke('updateConfig', config);
         LoggerUtil.debug(
             TAG, 'Background service started with config: $config');
